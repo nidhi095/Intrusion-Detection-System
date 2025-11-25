@@ -6,6 +6,7 @@ import time
 target_ip = input("Enter target IP: ")
 print("Simulating Port Scan against", target_ip)
 
+
 # Simulate many destination ports from same source (port scan)
 for port in range(20, 60):
     packet = IP(dst=target_ip)/TCP(dport=port, flags="S")

@@ -63,3 +63,4 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigint_handler)
     # sniff on the default interface. If you need a specific interface, add iface="eth0" or similar.
     sniff(prn=analyze_packet, store=False)
+
