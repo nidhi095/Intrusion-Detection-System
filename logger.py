@@ -1,3 +1,4 @@
+# logger.py
 import pandas as pd
 from datetime import datetime
 import os
@@ -13,7 +14,6 @@ def init_log():
         df.to_csv(LOG_PATH, index=False)
 
 def log_packet(src_ip, dst_ip, protocol, sport, dport):
-    """Log each packet to CSV file (appends)."""
     timestamp = datetime.now().isoformat()
     new_entry = {
         "timestamp": timestamp,
@@ -25,8 +25,6 @@ def log_packet(src_ip, dst_ip, protocol, sport, dport):
     }
     try:
         df = pd.DataFrame([new_entry])
-        # append without header
         df.to_csv(LOG_PATH, mode="a", header=False, index=False)
     except Exception as e:
-        # If logging fails, print error but don't crash the sniffer
         print(f"[LoggerError] Could not write log: {e}")
