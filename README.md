@@ -19,21 +19,15 @@ This repo contains a small educational IDS and a set of simulation scripts.
 1. Install dependencies:
 pip install -r requirements.txt
 
-markdown
-Copy code
 2. Start the sniffer:
 python main.py # or python main.py 127.0.0.1 to focus on loopback
 
-arduino
-Copy code
 3. In another terminal run a simulator:
 python simulate_port_scan.py 127.0.0.1
 python simulate_ping_sweep.py 127.0.0.1
 python simulate_syn.py 127.0.0.1
 python simulate_dns_flood.py 127.0.0.1
 
-vbnet
-Copy code
 4. Stop the sniffer with Ctrl+C to see the summary; logs are in `logs/traffic_log.csv`.
 
 ## Notes for Windows users
