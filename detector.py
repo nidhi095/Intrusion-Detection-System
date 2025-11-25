@@ -1,37 +1,82 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Track packets from each source
-port_scan_tracker = defaultdict(set)
-syn_flood_tracker = defaultdict(int)
+# For time-window tracking
+port_scan_tracker = defaultdict(dict)       # src_ip -> {port: last_seen_time}
+syn_flood_tracker = defaultdict(list)       # src_ip -> [timestamps]
 
-def detect_port_scan(src_ip, dst_port, threshold=15):
-    """Detect if one IP is hitting too many different destination ports."""
+
+def detect_port_scan(src_ip, dst_port, threshold=15, window_seconds=30):
+    """
+    Detect if one IP is hitting too many different destination ports
+    within a recent time window (e.g., last 30 seconds).
+    """
     if dst_port is None:
         return None
+
+    now = datetime.now()
+    ports = port_scan_tracker[src_ip]
+
+    # Record/refresh this port with current time
     try:
-        port_scan_tracker[src_ip].add(int(dst_port))
+        dport = int(dst_port)
     except Exception:
-        # if dport isn't an int, ignore for port-scan counting
         return None
-    if len(port_scan_tracker[src_ip]) > threshold:
-        return f"[{datetime.now().isoformat()}] ⚠️ Port Scan Detected from {src_ip} (ports seen: {len(port_scan_tracker[src_ip])})"
+
+    ports[dport] = now
+
+    # Drop old ports outside the time window
+    cutoff = now - timedelta(seconds=window_seconds)
+    for p, t in list(ports.items()):
+        if t < cutoff:
+            del ports[p]
+
+    # Count how many unique ports remain in the window
+    unique_ports = len(ports)
+    if unique_ports > threshold:
+        return (
+            f"[{now.isoformat()}] ⚠️ Port Scan Detected from {src_ip} "
+            f"(unique ports in last {window_seconds}s: {unique_ports})"
+        )
+
     return None
 
-def detect_syn_flood(src_ip, flags, threshold=50):
-    """Detect if SYN packets from one IP exceed threshold."""
+
+def detect_syn_flood(src_ip, flags, threshold=50, window_seconds=30):
+    """
+    Detect if SYN packets from one IP exceed threshold within
+    a recent time window (e.g., last 30 seconds).
+    """
     if not flags:
         return None
-    # count if SYN bit present (flags like 'S', 'SA', etc.)
+
+    now = datetime.now()
+
+    # Only count packets where SYN flag is present
     if "S" in flags:
-        syn_flood_tracker[src_ip] += 1
-        if syn_flood_tracker[src_ip] > threshold:
-            return f"[{datetime.now().isoformat()}] 🚨 Possible SYN Flood from {src_ip} (SYN count: {syn_flood_tracker[src_ip]})"
+        times = syn_flood_tracker[src_ip]
+        times.append(now)
+
+        # Drop timestamps outside the window
+        cutoff = now - timedelta(seconds=window_seconds)
+        syn_flood_tracker[src_ip] = [t for t in times if t >= cutoff]
+
+        syn_count = len(syn_flood_tracker[src_ip])
+        if syn_count > threshold:
+            return (
+                f"[{now.isoformat()}] 🚨 Possible SYN Flood from {src_ip} "
+                f"(SYN packets in last {window_seconds}s: {syn_count})"
+            )
+
     return None
 
+
 def detect_invalid_ip(src_ip):
-    """Flag private IPs for demo (note: private IPs are normal inside local networks)."""
-    # 172.16.0.0 - 172.31.255.255 are private; naive prefix check for demo
+    """
+    Flag private IPs for demo.
+    Note: private IPs are normal inside local networks;
+    this is just to show the detector working.
+    """
     private_prefixes = ("10.", "192.168.", "172.")
     if src_ip.startswith(private_prefixes):
         return f"[{datetime.now().isoformat()}] ⚠️ Private/internal IP traffic (for demo): {src_ip}"
