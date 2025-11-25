@@ -81,3 +81,41 @@ def detect_invalid_ip(src_ip):
     if src_ip.startswith(private_prefixes):
         return f"[{datetime.now().isoformat()}] ⚠️ Private/internal IP traffic (for demo): {src_ip}"
     return None
+
+# NEW: track ICMP ping sweeps
+ping_sweep_tracker = defaultdict(dict)   # src_ip -> {dst_ip: last_seen_time}
+
+
+def detect_ping_sweep(src_ip, dst_ip, icmp_type, threshold=10, window_seconds=30):
+    """
+    Detect ICMP ping sweep:
+    One source IP sending ICMP Echo Requests (ping) to many different
+    destination IPs within a recent time window.
+    """
+    if dst_ip is None or icmp_type is None:
+        return None
+
+    # Only consider Echo Request packets (ICMP type 8)
+    if icmp_type != 8:
+        return None
+
+    now = datetime.now()
+    hosts = ping_sweep_tracker[src_ip]
+
+    # Record/refresh this destination host with current time
+    hosts[dst_ip] = now
+
+    # Drop old entries outside the time window
+    cutoff = now - timedelta(seconds=window_seconds)
+    for host, t in list(hosts.items()):
+        if t < cutoff:
+            del hosts[host]
+
+    unique_hosts = len(hosts)
+    if unique_hosts > threshold:
+        return (
+            f"[{now.isoformat()}] ⚠️ ICMP Ping Sweep detected from {src_ip} "
+            f"(hosts probed in last {window_seconds}s: {unique_hosts})"
+        )
+
+    return None
