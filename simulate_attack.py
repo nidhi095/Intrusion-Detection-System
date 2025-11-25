@@ -4,7 +4,7 @@ import time
 
 # target can be 127.0.0.1 for local demo, or your machine's IP on LAN
 target_ip = input("Enter target IP: ")
-print("🧨 Simulating Port Scan against", target_ip)
+print("Simulating Port Scan against", target_ip)
 
 # Simulate many destination ports from same source (port scan)
 for port in range(20, 60):
