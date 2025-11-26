@@ -55,7 +55,7 @@ def detect_port_scan(src_ip, dst_port, threshold=PORT_SCAN_THRESHOLD):
         return None
     count = len(port_scan_tracker[src_ip])
     if count > threshold:
-        msg = f"[{datetime.now().isoformat()}] ⚠️ Port Scan Detected from {src_ip} (ports seen: {count})"
+        msg = f"[{datetime.now().isoformat()}] Port Scan Detected from {src_ip} (ports seen: {count})"
         alert_log.append(msg)
         return msg
     return None
@@ -92,7 +92,7 @@ def detect_half_open_handshakes(src_ip, flags, threshold=100):
         entry["last_seen"] = datetime.now()
 
     if entry["syn"] > threshold and entry["syn"] > (entry["ack"] * 3 + 5):
-        msg = f"[{datetime.now().isoformat()}] ⚠️ Suspicious half-open handshakes from {src_ip} (syns: {entry['syn']}, acks: {entry['ack']})"
+        msg = f"[{datetime.now().isoformat()}] Suspicious half-open handshakes from {src_ip} (syns: {entry['syn']}, acks: {entry['ack']})"
         alert_log.append(msg)
         # dampen counters to avoid repeating the same alert endlessly
         entry["syn"] = entry["syn"] // 2
@@ -125,7 +125,7 @@ def detect_ping_sweep(src_ip, dst_ip, icmp_type, hosts_threshold=PING_SWEEP_HOST
     unique_hosts = {entry[1] for entry in dq}
     count = len(unique_hosts)
     if count >= hosts_threshold:
-        msg = f"[{datetime.now().isoformat()}] ⚠️ ICMP Ping Sweep detected from {src_ip} (hosts probed in last {window}s: {count})"
+        msg = f"[{datetime.now().isoformat()}] ICMP Ping Sweep detected from {src_ip} (hosts probed in last {window}s: {count})"
         alert_log.append(msg)
         # clear to avoid immediate repeats
         ping_tracker[src_ip].clear()
@@ -140,7 +140,7 @@ def detect_invalid_ip(src_ip):
     """
     private_prefixes = ("10.", "192.168.", "172.")
     if any(src_ip.startswith(p) for p in private_prefixes):
-        msg = f"[{datetime.now().isoformat()}] ⚠️ Private/internal IP traffic (for demo): {src_ip}"
+        msg = f"[{datetime.now().isoformat()}] Private/internal IP traffic (for demo): {src_ip}"
         return msg
     return None
 
@@ -156,7 +156,7 @@ def detect_packet_rate(src_ip, window_seconds=PACKET_RATE_WINDOW, threshold=PACK
     while dq and dq[0] < cutoff:
         dq.popleft()
     if len(dq) > threshold:
-        msg = f"[{datetime.now().isoformat()}] ⚠️ High packet rate from {src_ip} ({len(dq)} pkts in last {window_seconds}s)"
+        msg = f"[{datetime.now().isoformat()}] High packet rate from {src_ip} ({len(dq)} pkts in last {window_seconds}s)"
         alert_log.append(msg)
         # trim to avoid repeat spamming
         packet_times[src_ip] = deque(list(dq)[-threshold//2:])
