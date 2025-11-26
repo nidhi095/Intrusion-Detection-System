@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     init_log()
 
-    print("🚀 HYBRID IDS STARTED")
+    print("HYBRID IDS STARTED")
     print("[*] Real packet sniffer running...")
     print("[*] Simulation listener running (UDP port 9999)\n")
 
